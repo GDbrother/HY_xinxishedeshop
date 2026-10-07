@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>信息社商品（严格付款金额识别版）</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#697386;--primary:#2563eb;--primary2:#1d4ed8;--border:#e5e7eb;--ok:#15803d;--okbg:#f0fdf4;--err:#b91c1c;--errbg:#fef2f2;--warn:#9a3412;--warnbg:#fff7ed}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif}
+.container{max-width:900px;margin:auto;padding:18px}
+.hero{padding:22px 4px 10px}.hero h1{margin:0 0 8px;font-size:30px}.hero p{margin:0;color:var(--muted)}
+.card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 5px 18px rgba(0,0,0,.04)}
+h2{font-size:19px;margin:0 0 14px}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.product{border:1px solid var(--border);border-radius:15px;padding:14px}.product h3{margin:0 0 7px;font-size:17px;line-height:1.45}
+.price{font-weight:800;font-size:20px}.desc{font-size:13px;color:var(--muted);margin:6px 0 12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.qty{display:flex;align-items:center;gap:8px}.qty button{width:34px;height:34px;border:1px solid var(--border);background:#fff;border-radius:9px;font-size:20px;cursor:pointer}
+.qty span{min-width:25px;text-align:center;font-weight:700}
+label{display:block;font-weight:600;margin:12px 0 6px}
+input,textarea{width:100%;border:1px solid #d8dde7;border-radius:10px;padding:11px 12px;font-size:16px;background:#fff;outline:none}
+input:focus,textarea:focus{border-color:var(--primary)} textarea{min-height:90px;resize:vertical}
+.total{font-size:24px;font-weight:800;text-align:right;margin-top:14px}.muted{color:var(--muted);font-size:13px}
+.paybox{text-align:center;background:#fafafa;border:1px dashed #cbd5e1;border-radius:14px;padding:18px}
+.paybox img{max-width:260px;width:100%;height:auto;border-radius:10px;background:#fff;display:none;margin:10px auto}
+.pay-placeholder{width:220px;height:220px;margin:10px auto;border:2px dashed #cbd5e1;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
+.notice{background:var(--warnbg);border:1px solid #fed7aa;padding:12px;border-radius:12px;color:var(--warn);font-size:14px;line-height:1.6}
+.status{padding:12px;border-radius:12px;margin-top:12px;font-size:14px;line-height:1.6;text-align:left}
+.status.neutral{background:#f8fafc;border:1px solid #e2e8f0;color:#475569}.status.ok{background:var(--okbg);border:1px solid #bbf7d0;color:var(--ok)}
+.status.error{background:var(--errbg);border:1px solid #fecaca;color:var(--err)}
+.ocr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:12px;text-align:left}
+.ocr-item{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px}
+.ocr-item b{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}.ocr-item span{font-weight:700;word-break:break-all}
+.preview-img{display:none;max-width:100%;max-height:360px;margin:12px auto;border-radius:12px;border:1px solid var(--border)}
+.order-preview{background:#f8fafc;border-radius:12px;padding:12px;white-space:pre-wrap;font-size:14px;line-height:1.65}
+button.primary{width:100%;border:0;background:var(--primary);color:#fff;border-radius:12px;padding:14px;font-size:17px;font-weight:700;cursor:pointer}
+button.primary:hover:not(:disabled){background:var(--primary2)}
+button.primary:disabled{background:#94a3b8;cursor:not-allowed}
+button.secondary{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+.footer{text-align:center;color:var(--muted);font-size:12px;padding:20px 0 35px}
+.small-note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
+@media(max-width:560px){.container{padding:12px}.hero h1{font-size:26px}.card{padding:14px}.products{grid-template-columns:1fr}}
+
+.steps{display:flex;gap:8px;margin:8px 0 14px}
+.step{flex:1;text-align:center;padding:9px 5px;border-radius:10px;background:#e2e8f0;color:#64748b;font-weight:700;font-size:13px}
+.step.active{background:#2563eb;color:#fff}.step.done{background:#bfdbfe;color:#1e40af}
+.next-btn{margin-top:16px}
+.order-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;white-space:pre-wrap;font-size:14px;line-height:1.65;margin-top:14px}
+.status{padding:12px;border-radius:12px;margin-top:12px;font-size:14px;line-height:1.6;text-align:left}
+.status.neutral{background:#f8fafc;border:1px solid #e2e8f0;color:#475569}
+.status.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.status.error{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+.ocr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:12px;text-align:left}
+.ocr-item{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px}
+.ocr-item b{display:block;font-size:12px;color:#697386;margin-bottom:4px}.ocr-item span{font-weight:700;word-break:break-all}
+.preview-img{display:none;max-width:100%;max-height:360px;margin:12px auto;border-radius:12px;border:1px solid #e5e7eb}
+.lock-overlay{position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.78);display:flex;align-items:center;justify-content:center;padding:20px}
+.lock-card{max-width:420px;width:100%;background:#fff;border-radius:18px;padding:24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.lock-card h2{margin-top:0}
+body.locked>*:not(#lockOverlay){pointer-events:none}
+button.secondary{width:100%;margin-top:10px;border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:10px;padding:12px;font-weight:700;cursor:pointer}
+button.secondary:disabled{opacity:.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div id="lockOverlay" class="lock-overlay" style="display:none">
+  <div class="lock-card">
+    <h2>🔒 页面已锁定</h2>
+    <p>检测到浏览器返回操作。为了避免订单流程被修改，本订单页面已锁定。</p>
+    <p class="muted">如需重新下单，请刷新页面重新开始。</p>
+    <button type="button" class="primary" onclick="location.reload()">重新开始</button>
+  </div>
+</div>
+
+<div class="container">
+<header class="hero">
+  <h1>🛍️ 信息社商品</h1>
+  <p>按步骤完成商品选择、个人信息和付款。进入下一步后不能返回修改前面的步骤。</p>
+</header>
+
+<div class="steps">
+  <div class="step active" id="stepDot1">1 商品</div>
+  <div class="step" id="stepDot2">2 信息</div>
+  <div class="step" id="stepDot3">3 付款</div>
+</div>
+
+<section class="card stage" id="stage1">
+  <h2>① 选择商品</h2>
+  <div id="products" class="products"></div>
+  <div class="total">合计：¥<span id="total">0.00</span></div>
+  <button class="primary next-btn" id="next1" type="button" disabled>下一步：填写个人信息</button>
+</section>
+
+<section class="card stage" id="stage2" style="display:none">
+  <h2>② 填写个人信息</h2>
+
+  <label for="className">班级 *</label>
+  <input id="className" placeholder="例如：初二（3）班" maxlength="50" autocomplete="off">
+
+  <label for="studentName">姓名 *</label>
+  <input id="studentName" placeholder="请输入姓名" maxlength="30" autocomplete="off">
+
+  <label for="wechatName">微信昵称（可选）</label>
+  <input id="wechatName" placeholder="请输入微信昵称（可不填）" maxlength="50" autocomplete="off">
+
+  <label for="remark">备注（可选）</label>
+  <textarea id="remark" placeholder="例如：取货时间等"></textarea>
+
+  <div class="order-box" id="personalOrderSummary"></div>
+  <button class="primary next-btn" id="next2" type="button" disabled>下一步：付款</button>
+</section>
+
+<section class="card stage" id="stage3" style="display:none">
+  <h2>③ 付款、上传凭证并提交</h2>
+
+  <div class="order-box" id="finalOrderInfo"></div>
+
+  <div class="paybox">
+    <div class="muted">请按照应付金额付款</div>
+    <div class="pay-placeholder" id="payPlaceholder">这里放你的付款码图片</div>
+    <img id="payImage" alt="付款码">
+    <div class="total">应付：¥<span id="payTotal">0.00</span></div>
+  </div>
+
+  <div class="notice">
+    <strong>付款后必须上传付款凭证截图。</strong><br>
+    上传截图是提交订单的必要条件。网页不会识别或判断付款金额，收款方将根据你提交的付款凭证人工核对。
+  </div>
+
+  <label for="paymentScreenshot">付款凭证截图 *</label>
+  <input id="paymentScreenshot" type="file" accept="image/*" required>
+  <img id="screenshotPreview" class="preview-img" alt="付款凭证预览">
+
+  <div id="uploadStatus" class="status neutral">尚未上传付款凭证。</div>
+
+  <div id="emailPreview" class="order-preview"></div>
+
+  <button class="primary" id="sendBtn" type="button" disabled>🔒 请先上传付款凭证</button>
+  <button class="secondary" id="shareBtn" type="button" disabled>📎 分享订单邮件 + 付款凭证</button>
+
+  <p class="small-note">
+    收件人固定为：KAL_Alpha@163.com。付款凭证必须上传后才能提交。标准 mailto 无法由纯本地网页强制添加本地图片附件；“分享订单邮件 + 付款凭证”会在浏览器支持文件分享时把截图作为附件交给系统邮件/分享程序。
+  </p>
+</section>
+
+<div class="footer">信息社商品 · 本地订单版本 · 付款凭证必须上传，收款方人工核对</div>
+</div>
+
+
+<script>
+const RECIPIENT = "KAL_Alpha@163.com";
+const PRODUCTS = [
+  {name:"明信片（Claude封号邮件）", price:5.00, desc:"Claude 封号邮件主题明信片"},
+  {name:"明信片（Claude明信片）", price:5.00, desc:"Claude 主题明信片"},
+  {name:"万事达（NFC卡原神启动）", price:20.00, desc:"NFC 卡 · 原神启动"},
+  {name:"万事达（NFC卡自己写卡）", price:15.00, desc:"NFC 卡 · 自己写卡"}
+];
+const PAYMENT_IMAGE = "";
+
+const cart = PRODUCTS.map(() => 0);
+let currentStage = 1;
+let orderNo = "";
+let orderTime = "";
+let screenshotFile = null;
+
+
+const $ = id => document.getElementById(id);
+const money = n => Number(n).toFixed(2);
+const pad = n => String(n).padStart(2,"0");
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
+function getItems(){
+  return PRODUCTS.map((p,i)=>({p,qty:cart[i]})).filter(x=>x.qty>0);
+}
+function getTotal(){
+  return getItems().reduce((sum,x)=>sum+x.p.price*x.qty,0);
+}
+function makeOrderNo(){
+  const d=new Date();
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${String(d.getMilliseconds()).padStart(3,"0")}`;
+}
+function makeOrderTime(){
+  return new Date().toLocaleString("zh-CN",{hour12:false});
+}
+function ensureOrder(){
+  if(!orderNo){orderNo=makeOrderNo();orderTime=makeOrderTime();}
+}
+
+function renderProducts(){
+  $("products").innerHTML=PRODUCTS.map((p,i)=>`
+    <div class="product">
+      <h3>${escapeHtml(p.name)}</h3>
+      <div class="price">¥${money(p.price)}</div>
+      <div class="desc">${escapeHtml(p.desc)}</div>
+      <div class="row">
+        <span class="muted">购买数量</span>
+        <div class="qty">
+          <button type="button" onclick="changeQty(${i},-1)">−</button>
+          <span id="qty-${i}">0</span>
+          <button type="button" onclick="changeQty(${i},1)">＋</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+function changeQty(i,delta){
+  if(currentStage!==1) return;
+  cart[i]=Math.max(0,cart[i]+delta);
+  $("qty-"+i).textContent=cart[i];
+  if(getItems().length) ensureOrder();
+  $("total").textContent=money(getTotal());
+  $("next1").disabled=getItems().length===0;
+}
+function setUploadStatus(text,type="neutral"){
+  $("uploadStatus").className="status "+type;
+  $("uploadStatus").innerHTML=text;
+}
+
+function updatePersonalSummary(){
+  const items=getItems();
+  $("personalOrderSummary").textContent=
+`订单号：${orderNo}
+下单时间：${orderTime}
+
+商品：
+${items.map(x=>`${x.p.name} × ${x.qty} = ¥${money(x.p.price*x.qty)}`).join("\n")}
+
+订单金额：¥${money(getTotal())}`;
+}
+function updateFinal(){
+  const items=getItems();
+  const cls=$("className").value.trim();
+  const name=$("studentName").value.trim();
+  const wechat=$("wechatName").value.trim();
+
+  $("finalOrderInfo").textContent=
+`订单号：${orderNo}
+下单时间：${orderTime}
+
+班级：${cls}
+姓名：${name}
+微信昵称：${wechat || "未填写（可选）"}
+
+购买商品：
+${items.map(x=>`${x.p.name} × ${x.qty} = ¥${money(x.p.price*x.qty)}`).join("\n")}
+
+订单金额：¥${money(getTotal())}`;
+  $("payTotal").textContent=money(getTotal());
+}
+function updateNext2(){
+  $("next2").disabled=!($("className").value.trim() && $("studentName").value.trim());
+}
+
+function goToStage(n){
+  if(n<=currentStage) return;
+  if(n===2 && currentStage===1){
+    if(!getItems().length){alert("请至少选择一种商品。");return;}
+    ensureOrder();
+    updatePersonalSummary();
+  }
+  if(n===3 && currentStage===2){
+    if(!$("className").value.trim() || !$("studentName").value.trim()){
+      alert("请填写班级和姓名。"); return;
+    }
+    updateFinal();
+  }
+  if(n!==currentStage+1) return;
+  currentStage=n;
+  [1,2,3].forEach(i=>{
+    $("stage"+i).style.display=i===currentStage?"block":"none";
+    $("stepDot"+i).classList.toggle("active",i===currentStage);
+    $("stepDot"+i).classList.toggle("done",i<currentStage);
+  });
+  history.pushState({orderStage:currentStage},"","");
+}
+
+$("next1").addEventListener("click",()=>goToStage(2));
+$("next2").addEventListener("click",()=>goToStage(3));
+["className","studentName","wechatName","remark"].forEach(id=>{
+  $(id).addEventListener("input",()=>{
+    if(currentStage===2) updateNext2();
+    if(currentStage===3) updateFinal();
+  });
+});
+
+/* 进入第二步/第三步后，浏览器返回键直接锁死当前订单 */
+let suppressPop=false;
+history.replaceState({orderStage:1},"","");
+history.pushState({orderStage:1},"","");
+
+window.addEventListener("popstate",()=>{
+  if(suppressPop) return;
+  if(currentStage>=2){
+    $("lockOverlay").style.display="flex";
+    document.body.classList.add("locked");
+    suppressPop=true;
+    history.pushState({locked:true},"","");
+    setTimeout(()=>{suppressPop=false;},50);
+  }else{
+    history.pushState({orderStage:1},"","");
+  }
+});
+
+/* 离开/刷新前提醒，不能真正阻止浏览器刷新，但可降低误操作 */
+window.addEventListener("beforeunload",e=>{
+  if(currentStage>=2){
+    e.preventDefault();
+    e.returnValue="";
+  }
+});
+
+function refreshButtons(){
+  const canSend=!!screenshotFile;
+  $("sendBtn").disabled=!canSend;
+  $("shareBtn").disabled=!canSend;
+  $("sendBtn").textContent=canSend
+    ?"📧 生成并打开订单邮件"
+    :"🔒 请先上传付款凭证";
+}
+
+$("paymentScreenshot").addEventListener("change",e=>{
+  const file=e.target.files && e.target.files[0];
+  screenshotFile=file||null;
+  const oldSrc=$("screenshotPreview").src;
+  if(oldSrc.startsWith("blob:")) URL.revokeObjectURL(oldSrc);
+  if(file){
+    $("screenshotPreview").src=URL.createObjectURL(file);
+    $("screenshotPreview").style.display="block";
+    setUploadStatus(`✅ 已上传付款凭证：<strong>${escapeHtml(file.name)}</strong><br>提交时将要求同时提供这张截图。`,"ok");
+  }else{
+    $("screenshotPreview").removeAttribute("src");
+    $("screenshotPreview").style.display="none";
+    setUploadStatus("尚未上传付款凭证。","neutral");
+  }
+  refreshButtons();
+});
+
+function buildMail(){
+  const cls=$("className").value.trim();
+  const name=$("studentName").value.trim();
+  const wechat=$("wechatName").value.trim();
+  const remark=$("remark").value.trim();
+  const items=getItems();
+  const total=getTotal();
+
+  if(!cls||!name){alert("请填写班级和姓名。");return null;}
+  if(!items.length){alert("订单没有商品。");return null;}
+  if(!screenshotFile){alert("必须上传付款凭证截图后才能提交订单。");return null;}
+
+  const itemText=items.map(x=>`${x.p.name} × ${x.qty} = ¥${money(x.p.price*x.qty)}`).join("\n");
+  const subject=`付款信息｜订单${orderNo}｜${cls}｜${name}｜¥${money(total)}`;
+  const body=`订单信息
+
+订单号：${orderNo}
+下单时间：${orderTime}
+
+班级：${cls}
+姓名：${name}
+微信昵称：${wechat||"未填写（可选）"}
+
+购买商品：
+${itemText}
+
+订单金额：¥${money(total)}
+
+付款凭证：已上传截图（请收款方人工核对）
+
+付款状态：用户已完成付款并提交订单
+备注：${remark||"无"}
+
+请收款方核对付款记录后处理订单。`;
+
+  return {subject,body};
+}
+
+$("sendBtn").addEventListener("click",()=>{
+  const mail=buildMail();
+  if(!mail)return;
+  location.href=`mailto:${RECIPIENT}?subject=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}`;
+});
+
+$("shareBtn").addEventListener("click",async()=>{
+  const mail=buildMail();
+  if(!mail || !screenshotFile)return;
+  try{
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[screenshotFile]})){
+      await navigator.share({
+        title:mail.subject,
+        text:mail.body,
+        files:[screenshotFile]
+      });
+    }else{
+      alert("当前浏览器不支持带附件分享。请打开邮箱后手动添加付款凭证截图。");
+    }
+  }catch(e){
+    if(e && e.name!=="AbortError") alert("分享失败，请在邮箱中手动添加付款凭证截图。");
+  }
+});
+
+if(PAYMENT_IMAGE){
+  $("payImage").src=PAYMENT_IMAGE;
+  $("payImage").style.display="block";
+  $("payPlaceholder").style.display="none";
+}
+
+renderProducts();
+$("total").textContent="0.00";
+</script>
+</body>
+</html>
